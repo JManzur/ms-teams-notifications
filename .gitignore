@@ -1,3 +1,9 @@
+# JManzur:
+terraform.tfvars
+.env
+.terraform.lock.hcl
+**/modules/ms-teams-notifications/output_lambda_zip/ms_teams_notification.zip
+
 # Local .terraform directories
 **/.terraform/*
 
