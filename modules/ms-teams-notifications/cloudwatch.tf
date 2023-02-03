@@ -1,6 +1,6 @@
 locals {
   metric_name        = "CPUUtilization" #https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/viewing_metrics_with_cloudwatch.html
-  evaluation_periods = "2"
+  evaluation_periods = "1"
   period             = "60"
   threshold          = "90"
   statistic          = "Maximum" #Valid Values are: SampleCount, Average, Sum, Minimum, Maximum
@@ -22,7 +22,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_cpu_utilization" {
     InstanceId = var.instance_id
   }
 
-  insufficient_data_actions = [aws_sns_topic.ms_teams_notification.arn] # Not recommended for the CPUUtilization metric
+  insufficient_data_actions = [aws_sns_topic.ms_teams_notification.arn]
   ok_actions                = [aws_sns_topic.ms_teams_notification.arn]
   alarm_actions             = [aws_sns_topic.ms_teams_notification.arn]
 }
