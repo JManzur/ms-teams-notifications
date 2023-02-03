@@ -16,6 +16,7 @@ resource "aws_instance" "demo" {
   key_name                    = var.ssh_key_name
   vpc_security_group_ids      = [aws_security_group.demo.id]
   associate_public_ip_address = true
+  monitoring                  = true
 
   user_data = <<EOF
   #!/bin/bash
