@@ -2,7 +2,7 @@ locals {
   metric_name        = "CPUUtilization" #https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/viewing_metrics_with_cloudwatch.html
   evaluation_periods = "1"
   period             = "60"
-  threshold          = "90"
+  threshold          = "50"
   statistic          = "Maximum" #Valid Values are: SampleCount, Average, Sum, Minimum, Maximum
 }
 

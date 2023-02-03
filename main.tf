@@ -38,4 +38,3 @@ module "slack-notifications" {
 
 #   depends_on = [module.ec2]
 # }
-
