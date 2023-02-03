@@ -18,7 +18,7 @@ resource "aws_lambda_function" "ms_teams_notification" {
 
   environment {
     variables = {
-      secret_ssm_parameter = aws_ssm_parameter.secret.name
+      teams_webhook_url = var.teams_webhook_url
     }
   }
 }

@@ -22,7 +22,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_cpu_utilization" {
     InstanceId = var.instance_id
   }
 
-  insufficient_data_actions = [aws_sns_topic.ms_teams_notification.arn]
-  ok_actions                = [aws_sns_topic.ms_teams_notification.arn]
-  alarm_actions             = [aws_sns_topic.ms_teams_notification.arn]
+  insufficient_data_actions = [aws_sns_topic.slack_notification.arn]
+  ok_actions                = [aws_sns_topic.slack_notification.arn]
+  alarm_actions             = [aws_sns_topic.slack_notification.arn]
 }

@@ -1,4 +1,4 @@
-data "aws_region" "current" {}
+data "aws_region" "nacurrent" {}
 data "aws_caller_identity" "current" {}
 
 # IAM Policy Source
@@ -12,25 +12,6 @@ data "aws_iam_policy_document" "ms_teams_notification_policy" {
       "logs:PutLogEvents"
     ]
     resources = ["arn:aws:logs:*:*:*"]
-  }
-
-  statement {
-    sid    = "GetParameter"
-    effect = "Allow"
-    actions = [
-      "ssm:GetParameters",
-      "ssm:GetParameter"
-    ]
-    resources = ["arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${aws_ssm_parameter.secret.name}"]
-  }
-
-  statement {
-    sid    = "KMSDecrypt"
-    effect = "Allow"
-    actions = [
-      "kms:Decrypt"
-    ]
-    resources = ["arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:key/alias/aws/ssm"]
   }
 }
 

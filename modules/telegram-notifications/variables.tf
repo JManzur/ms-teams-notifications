@@ -1,9 +1,6 @@
-variable "instance_id" {
-  type        = string
-  description = "[REQUIRED] The ID of the EC2 instance."
-}
+variable "instance_id" {}
 
-variable "webhook_url" {
+variable "teams_webhook_url" {
   type        = string
   description = "[REQUIRED] The Incoming Webhook URL for the Teams Chat"
 }

@@ -14,6 +14,6 @@ provider "aws" {
   profile = var.aws_profile
 
   default_tags {
-    tags = var.project-tags
+    tags = var.tags
   }
 }

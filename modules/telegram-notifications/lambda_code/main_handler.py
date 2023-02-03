@@ -1,5 +1,5 @@
-import boto3
-import urllib3, json, os, logging
+import urllib3, json, os
+import logging
 from datetime import datetime
 
 logger = logging.getLogger()
@@ -200,7 +200,7 @@ def get_date(StateChangeTime):
 
 def post_message(message):
 	http = urllib3.PoolManager()
-	url = get_parameter()
+	url = os.environ.get('teams_webhook_url')
 	encoded_msg = json.dumps(message).encode("utf-8")
 	response = http.request("POST", url, body=encoded_msg)
 
@@ -209,12 +209,3 @@ def post_message(message):
 		"StatusCode": response.status,
 		"Response": response.data
 		}
-
-def get_parameter():
-    client = boto3.client('ssm')
-    response = client.get_parameter(
-        Name='{}'.format(os.environ.get("secret_ssm_parameter")),
-        WithDecryption=True
-        )
-
-    return response['Parameter']['Value']

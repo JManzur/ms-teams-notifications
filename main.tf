@@ -7,12 +7,35 @@ module "ec2" {
 }
 
 module "ms-teams-notifications" {
-  source = "./modules/ms-teams-notifications"
+  count = var.deploy_ms_teams_notifications ? 1 : 0
 
-  instance_id       = module.ec2.instance_id
-  teams_webhook_url = var.teams_webhook_url
+  source      = "./modules/ms-teams-notifications"
+  name_prefix = "MS-Teams"
+  instance_id = module.ec2.instance_id
+  webhook_url = var.teams_webhook_url
 
-  depends_on = [
-    module.ec2
-  ]
+  depends_on = [module.ec2]
 }
+
+module "slack-notifications" {
+  count = var.deploy_slack_notifications ? 1 : 0
+
+  source      = "./modules/slack-notifications"
+  name_prefix = "Slack"
+  instance_id = module.ec2.instance_id
+  webhook_url = var.slack_webhook_url
+
+  depends_on = [module.ec2]
+}
+
+# module "telegram-notifications" {
+#   count = var.deploy_telegram_notifications ? 1 : 0
+
+#   source            = "./modules/telegram-notifications"
+#   name_prefix       = "Telegram"
+#   instance_id       = module.ec2.instance_id
+#   slack_webhook_url = var.slack_webhook_url
+
+#   depends_on = [module.ec2]
+# }
+
