@@ -1,5 +1,5 @@
-import urllib3, json, os
-import logging
+import boto3
+import urllib3, json, os, logging
 from datetime import datetime
 
 logger = logging.getLogger()
@@ -18,135 +18,31 @@ def lambda_handler(event, context):
         StateChangeTime = Message["StateChangeTime"]
         AlarmArn = Message["AlarmArn"]
 
-        message = {
-            "type": "message",
-            "attachments": [
-                {
-                    "contentType": "application/vnd.microsoft.card.adaptive",
-                    "contentUrl": None,
-                    "content": {
-                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                        "type": "AdaptiveCard",
-                        "version": "1.3",
-                        "body": [
-                            {
-                                "type": "Container",
-                                "padding": "None",
-                                "items": [
-                                    {
-                                        "type": "TextBlock",
-                                        "wrap": True,
-                                        "size": "Large",
-                                        "color": "{}".format(get_color(NewStateValue)),
-                                        "text": "{} {}: {}".format(get_emoji(NewStateValue), NewStateValue, AlarmName)
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "Container",
-                                "items": [
-                                    {
-                                        "type": "TextBlock",
-                                        "text": "{}".format(AlarmDescription),
-                                        "wrap": True
-                                    },
-                                    {
-                                        "type": "TextBlock",
-                                        "text": "{}".format(NewStateReason),
-                                        "wrap": True
-                                    }
-                                ],
-                                "isVisible": False,
-                                "id": "alarm-details"
-                            },
-                            {
-                                "type": "Container",
-                                "padding": "None",
-                                "items": [
-                                    {
-                                        "type": "ColumnSet",
-                                        "columns": [
-                                            {
-                                                "type": "Column",
-                                                "width": "stretch",
-                                                "items": [
-                                                    {
-                                                        "type": "TextBlock",
-                                                        "text": "Account",
-                                                        "wrap": True,
-                                                        "isSubtle": True,
-                                                        "weight": "Bolder"
-                                                    },
-                                                    {
-                                                        "type": "TextBlock",
-                                                        "wrap": True,
-                                                        "spacing": "Small",
-                                                        "text": "{}".format(AWSAccountId)
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                "type": "Column",
-                                                "width": "stretch",
-                                                "items": [
-                                                {
-                                                    "type": "TextBlock",
-                                                    "text": "Region",
-                                                    "wrap": True,
-                                                    "isSubtle": True,
-                                                    "weight": "Bolder"
-                                                },
-                                                {
-                                                    "type": "TextBlock",
-                                                    "text": "{}".format(Region),
-                                                    "wrap": True,
-                                                    "spacing": "Small"
-                                                }
-                                                ]
-                                            },
-                                            {
-                                                "type": "Column",
-                                                "width": "stretch",
-                                                "items": [
-                                                {
-                                                    "type": "TextBlock",
-                                                    "text": "UTC Time",
-                                                    "wrap": True,
-                                                    "weight": "Bolder",
-                                                    "isSubtle": True
-                                                },
-                                                {
-                                                    "type": "TextBlock",
-                                                    "text": "{}".format(get_date(StateChangeTime)),
-                                                    "wrap": True,
-                                                    "spacing": "Small"
-                                                }
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ],
-                        "padding": "None",
-                        "actions": [
-                            {
-                                "type": "Action.ToggleVisibility",
-                                "title": "Show Details",
-                                "targetElements": [
-                                "alarm-details"
-                                ]
-                            },
-                            {
-                                "type": "Action.OpenUrl",
-                                "title": "View in CloudWatch",
-                                "url": "{}".format(get_alarm_url(AlarmName, AlarmArn))
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
+        message = """
+        {0}* {1}: {2}*
+        
+        *AWS Account:* {3}
+        *AWS Region:* {4}
+        *UTC Time:* {5}
+
+        [View in CloudWatch]({6})
+        -----------------------------
+        \U00002139 *Alarm Description*:
+        {7}
+
+        \U00002139 *Alarm Details*:
+        {8}
+        """.format(
+            get_emoji(NewStateValue),
+            NewStateValue,
+            AlarmName,
+            AWSAccountId,
+            Region,
+            get_date(StateChangeTime),
+            get_alarm_url(AlarmName, AlarmArn),
+            AlarmDescription,
+            NewStateReason
+            )
         
         post_message(message)
 
@@ -177,14 +73,6 @@ def get_emoji(NewStateValue):
     elif NewStateValue == "INSUFFICIENT_DATA":
         return warning
 
-def get_color(NewStateValue):
-    if NewStateValue == "OK":
-        return "Good"
-    elif NewStateValue == "ALARM":
-        return "Attention"
-    elif NewStateValue == "INSUFFICIENT_DATA":
-        return "Warning"
-
 def get_alarm_url(AlarmName, AlarmArn):
     RegionCode = AlarmArn.split(":")[3]
     alarm_url = "https://{0}.console.aws.amazon.com/cloudwatch/home?region={0}#alarmsV2:alarm/{1}?".format(RegionCode, AlarmName)
@@ -198,14 +86,32 @@ def get_date(StateChangeTime):
 
     return formated_date
 
-def post_message(message):
-	http = urllib3.PoolManager()
-	url = os.environ.get('teams_webhook_url')
-	encoded_msg = json.dumps(message).encode("utf-8")
-	response = http.request("POST", url, body=encoded_msg)
+def get_parameter(ssm_parameter_name):
+    client = boto3.client('ssm')
+    response = client.get_parameter(
+        Name='{}'.format(os.environ.get(ssm_parameter_name)),
+        WithDecryption=True
+        )
 
-	return {
-		"Message": message,
-		"StatusCode": response.status,
-		"Response": response.data
-		}
+    return response['Parameter']['Value']
+
+def post_message(message):
+    http = urllib3.PoolManager()
+
+    bot_token = get_parameter("telegram_bot_token_ssm_parameter")
+    chat_id = get_parameter("telegram_chat_id_ssm_parameter")
+
+    fields = {
+        'chat_id': '{}'.format(chat_id),
+        'text': '{}'.format(message),
+        'parse_mode': 'Markdown' # Markdown, HTML
+    }
+
+    api_url = 'https://api.telegram.org/bot{}/sendMessage'.format(bot_token)
+    response = json.loads(http.request("POST", api_url, fields=fields).data.decode('utf-8'))
+
+    if response.status == 200:
+        return response
+    else:
+        logger.error(response)
+        raise ValueError("Failed to send telegarm message")

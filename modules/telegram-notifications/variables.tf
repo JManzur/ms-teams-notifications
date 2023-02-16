@@ -1,6 +1,11 @@
 variable "instance_id" {}
 
-variable "teams_webhook_url" {
+variable "telegram_bot_token" {
+  type        = string
+  description = "[REQUIRED] The Incoming Webhook URL for the Teams Chat"
+}
+
+variable "telegram_chat_id" {
   type        = string
   description = "[REQUIRED] The Incoming Webhook URL for the Teams Chat"
 }
